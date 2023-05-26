@@ -30,9 +30,25 @@ app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
+/**
+ * CREATE
+ */
+// Create
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
+
+// Save
+// post request
+ app.post("/urls", (req, res) => {
+  const urlInfo = req.body; // Log the POST request body to the console
+  console.log('Pet info(post form submission received)', urlInfo)
+  let shortURL = generateRandomString(6);
+  urlDatabase[shortURL] = urlInfo.longURL;
+  console.log('new urldatabase', urlDatabase);
+  res.redirect(`/urls/${shortURL}`)
+});
+
 app.get("/urls/:id", (req, res) => {
   console.log(req.params);
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id]}
@@ -52,12 +68,6 @@ app.get("/set", (req, res) => {
    res.send(`a = ${a}`);
   });
   
-  // post request
-   app.post("/urls", (req, res) => {
-    console.log(req.body); // Log the POST request body to the console
-    let shortURL = generateRandomString(6);
-    res.send(shortURL); // Respond with 'Ok' (we will replace this)
-  });
 
   app.listen(PORT, () => {
     console.log(`Example app listening on port ${PORT}!`);
