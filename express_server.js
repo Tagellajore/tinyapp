@@ -82,4 +82,14 @@ app.get("/set", (req, res) => {
   app.listen(PORT, () => {
     console.log(`Example app listening on port ${PORT}!`);
   });
+
+// Delete
+
+  app.post('/urls/:id/delete', (req, res) => {
+    console.log(req.params.id)
+     const urlKey = req.params.id;
+     delete urlDatabase[urlKey];
+
+     res.redirect("/urls");
+  });
   
