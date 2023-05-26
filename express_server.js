@@ -1,4 +1,5 @@
 const express = require("express");
+const morgan = require('morgan')
 const app = express();
 const PORT = 8080; 
 
@@ -21,6 +22,9 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+// Middleware
+
+app.use(morgan('dev'));
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
