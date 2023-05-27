@@ -39,5 +39,15 @@
       integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
       crossorigin="anonymous"
     ></script>
+    <div >
+      <p class="card-text">Edit</p>
+    <form method="POST" action="/urls/<%= id %>/">
+      <label>
+        New Url:
+         <input type="text" name="newurl"> 
+     </label>
+          <button type="submit">Submit</button>
+  </form>
+</div>
   </body>
 </html>

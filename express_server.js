@@ -46,7 +46,7 @@ app.get("/urls/new", (req, res) => {
 // post request
  app.post("/urls", (req, res) => {
   const urlInfo = req.body; // Log the POST request body to the console
-  console.log('Pet info(post form submission received)', urlInfo)
+  console.log('Url info(post form submission received)', urlInfo)
   let shortURL = generateRandomString(6);
   urlDatabase[shortURL] = urlInfo.longURL;
   console.log('new urldatabase', urlDatabase);
@@ -82,6 +82,20 @@ app.get("/set", (req, res) => {
   app.listen(PORT, () => {
     console.log(`Example app listening on port ${PORT}!`);
   });
+
+// Update
+
+app.post('/urls/:id', (req, res) => {
+  const urlInfo = req.body;
+  console.log('url info (post form submission received)', urlInfo);
+ 
+  const id = req.params.id
+  urlDatabase[id] = urlInfo.newurl;
+
+  console.log('updated urls', urlDatabase);
+  res.redirect('/urls')
+
+})
 
 // Delete
 
