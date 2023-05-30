@@ -30,6 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
+// Index
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
@@ -46,7 +47,7 @@ app.get("/urls/new", (req, res) => {
 // post request
  app.post("/urls", (req, res) => {
   const urlInfo = req.body; // Log the POST request body to the console
-  console.log('Url info(post form submission received)', urlInfo)
+  console.log('Url info(post form submission received save)', urlInfo)
   let shortURL = generateRandomString(6);
   urlDatabase[shortURL] = urlInfo.longURL;
   console.log('new urldatabase', urlDatabase);
@@ -87,7 +88,7 @@ app.get("/set", (req, res) => {
 
 app.post('/urls/:id', (req, res) => {
   const urlInfo = req.body;
-  console.log('url info (post form submission received)', urlInfo);
+  console.log('url info (post form submission received update)', urlInfo);
  
   const id = req.params.id
   urlDatabase[id] = urlInfo.newurl;
@@ -95,12 +96,13 @@ app.post('/urls/:id', (req, res) => {
   console.log('updated urls', urlDatabase);
   res.redirect('/urls')
 
-})
+}) 
 
 // Delete
 
   app.post('/urls/:id/delete', (req, res) => {
     console.log(req.params.id)
+    console.log('Delete')
      const urlKey = req.params.id;
      delete urlDatabase[urlKey];
 
