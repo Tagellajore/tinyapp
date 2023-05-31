@@ -98,6 +98,16 @@ app.post('/urls/:id', (req, res) => {
 
 }) 
 
+// login route
+app.post('/login', (req, res) => {
+  // grab the info from the body
+  const username = req.body.username;
+  res.cookie('username', username);
+  res.redirect('/urls');
+
+
+});
+
 // Delete
 
   app.post('/urls/:id/delete', (req, res) => {
