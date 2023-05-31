@@ -128,6 +128,11 @@ app.post('/logout', (req, res) => {
   res.redirect('/urls')
 })
 
+// register
+app.get('/register', (req, res) => {
+  res.render("register");
+})
+
 // Delete
 
   app.post('/urls/:id/delete', (req, res) => {
