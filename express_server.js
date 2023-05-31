@@ -1,5 +1,7 @@
 const express = require("express");
 const morgan = require('morgan')
+const cookieParser = require('cookie-parser');
+
 const app = express();
 const PORT = 8080; 
 
@@ -26,15 +28,16 @@ const urlDatabase = {
 
 app.use(morgan('dev'));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser()); // create and populate req.cookies
 
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 // Index
-app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
-  res.render("urls_index", templateVars);
-});
+// app.get("/urls", (req, res) => {
+//   const templateVars = { urls: urlDatabase };
+//   res.render("urls_index", templateVars);
+// });
 /**
  * CREATE
  */
@@ -105,7 +108,17 @@ app.post('/login', (req, res) => {
   res.cookie('username', username);
   res.redirect('/urls');
 
+});
 
+// Display the username 
+app.get("/urls", (req, res) => {
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"],
+    // ... any other vars
+
+  };
+  res.render("urls_index", templateVars);
 });
 
 // Delete
