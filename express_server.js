@@ -121,6 +121,13 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+// logout
+app.post('/logout', (req, res) => {
+  // clear the user's cookies
+  res.clearCookie('username');
+  res.redirect('/urls')
+})
+
 // Delete
 
   app.post('/urls/:id/delete', (req, res) => {
