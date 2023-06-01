@@ -24,6 +24,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = {
+  abc: {
+    id: "abc",
+    email: "t@t.com",
+    password: "123",
+  },
+  def: {
+    id: "def",
+    email: "y@y.com",
+    password: "456",
+  },
+};
+
 // Middleware
 
 app.use(morgan('dev'));
@@ -112,9 +125,10 @@ app.post('/login', (req, res) => {
 
 // Display the username 
 app.get("/urls", (req, res) => {
+  const user_id = req.cookies.user_id
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"],
+    user: users[user_id],
     // ... any other vars
 
   };
@@ -132,6 +146,39 @@ app.post('/logout', (req, res) => {
 app.get('/register', (req, res) => {
   res.render("register");
 })
+
+app.post('/register', (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  // lookup the specific user from users object
+  let foundUser = null;
+  
+  for(const user_id in users) {
+    const user = users[user_id];
+    if(user.email === email) {
+      foundUser = user;
+    }
+  }
+  
+  
+  // the email is unique
+  // create a new user object
+  const id = generateRandomString(3);
+  
+  const newUser = {
+    id: id,
+    email: email,
+    password: password
+  };
+  
+  // update the users data base
+  users[id] = newUser;
+  
+  res.cookie('user_id', id);
+  
+  res.redirect('/urls')
+});
 
 // Delete
 
