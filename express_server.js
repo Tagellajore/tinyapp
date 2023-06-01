@@ -151,6 +151,11 @@ app.post('/register', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
+  // did they not provide email and/or password
+  if (!email || !password) {
+    return res.status(400).send('please provide an email and a password');
+  }
+
   // lookup the specific user from users object
   let foundUser = null;
   
@@ -159,6 +164,11 @@ app.post('/register', (req, res) => {
     if(user.email === email) {
       foundUser = user;
     }
+  }
+
+  // did we not find a user
+  if (foundUser) {
+     return res.status(400).send('a user with that email already exists')
   }
   
   
