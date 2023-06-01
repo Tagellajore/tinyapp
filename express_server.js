@@ -78,7 +78,8 @@ app.get("/u/:id", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   console.log(req.params);
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id]}
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id],
+  user: users[req.cookies.username]}
   res.render("urls_show", templateVars);
 });
 app.get("/urls.json", (req, res) => {
@@ -114,21 +115,35 @@ app.post('/urls/:id', (req, res) => {
 
 }) 
 
+
+//login route get
+app.get('/login', (req, res) => {
+  res.render('login');
+})
+
 // login route
 app.post('/login', (req, res) => {
   // grab the info from the body
-  const username = req.body.username;
-  res.cookie('username', username);
+  const email = req.body.email;
+  let id = undefined;
+  console.log(email);
+  for(user in users) {
+    console.log(user);
+    if(users[user].email === email) {
+       id = users[user].id;
+    }
+  }
+  res.cookie('username', id);
   res.redirect('/urls');
 
 });
 
 // Display the username 
 app.get("/urls", (req, res) => {
-  const user_id = req.cookies.user_id
+  const username = req.cookies.username
   const templateVars = {
     urls: urlDatabase,
-    user: users[user_id],
+    user: users[username],
     // ... any other vars
 
   };
@@ -185,7 +200,7 @@ app.post('/register', (req, res) => {
   // update the users data base
   users[id] = newUser;
   
-  res.cookie('user_id', id);
+  res.cookie('username', id);
   
   res.redirect('/urls')
 });
