@@ -56,7 +56,7 @@ app.get("/", (req, res) => {
  */
 // Create
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  res.render("urls_new", { user: req.user });
 });
 
 // Save
@@ -79,7 +79,7 @@ app.get("/u/:id", (req, res) => {
 app.get("/urls/:id", (req, res) => {
   console.log(req.params);
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id],
-  user: users[req.cookies.username]}
+  user: users[req.cookies.user_id]}
   res.render("urls_show", templateVars);
 });
 app.get("/urls.json", (req, res) => {
@@ -96,7 +96,6 @@ app.get("/set", (req, res) => {
    res.send(`a = ${a}`);
   });
   
-
   app.listen(PORT, () => {
     console.log(`Example app listening on port ${PORT}!`);
   });
@@ -112,54 +111,67 @@ app.post('/urls/:id', (req, res) => {
 
   console.log('updated urls', urlDatabase);
   res.redirect('/urls')
-
-}) 
-
+});
 
 //login route get
 app.get('/login', (req, res) => {
-  res.render('login');
+  res.render('login',{user: users[req.cookies.user_id] });
 })
 
 // login route
 app.post('/login', (req, res) => {
   // grab the info from the body
   const email = req.body.email;
-  let id = undefined;
-  console.log(email);
-  for(user in users) {
-    console.log(user);
-    if(users[user].email === email) {
-       id = users[user].id;
+  const password = req.body.password;
+
+  let foundUserByEmail = null;
+  
+  for(const user_id in users) {
+    const user = users[user_id];
+    if(user.email === email) {
+      foundUserByEmail = user;
     }
   }
-  res.cookie('username', id);
-  res.redirect('/urls');
 
+  if(foundUserByEmail) {
+     if(foundUserByEmail.password !== password) {
+      return res.status(403).send('Invalid email or password');
+     }
+  } else {
+     return res.status(403).send('You have to create an account first!');
+  }
+  
+  
+  const id = foundUserByEmail.id;
+
+  res.cookie('user_id', id);
+  res.redirect('/urls');
 });
 
-// Display the username 
+// logout
+app.post('/logout', (req, res) => {
+  // clear the user's cookies
+  res.clearCookie('user_id');
+  res.redirect('/login')
+})
+
+// Display the user_id 
 app.get("/urls", (req, res) => {
-  const username = req.cookies.username
+  const user_id = req.cookies.user_id
+  const user = users[user_id];;
   const templateVars = {
     urls: urlDatabase,
-    user: users[username],
+    user: user
     // ... any other vars
 
   };
   res.render("urls_index", templateVars);
 });
 
-// logout
-app.post('/logout', (req, res) => {
-  // clear the user's cookies
-  res.clearCookie('username');
-  res.redirect('/urls')
-})
 
 // register
 app.get('/register', (req, res) => {
-  res.render("register");
+  res.render("register", {user: users[req.cookies.user_id] });
 })
 
 app.post('/register', (req, res) => {
@@ -200,7 +212,7 @@ app.post('/register', (req, res) => {
   // update the users data base
   users[id] = newUser;
   
-  res.cookie('username', id);
+  res.cookie('user_id', id);
   
   res.redirect('/urls')
 });
