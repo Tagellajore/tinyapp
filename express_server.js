@@ -19,10 +19,31 @@ function generateRandomString(length) {
   return result;
 };
 
+
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "abc",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
 };
+
+function urlsForUser(id) {
+  let obj = {};
+  for (key in urlDatabase) {
+    if(urlDatabase[key].userID === id) {
+      obj[key] = urlDatabase[key]
+    }
+   console.log(urlDatabase[key].userID);
+  }
+  return obj;
+}
+
+urlsForUser();
+
 
 const users = {
   abc: {
@@ -56,31 +77,66 @@ app.get("/", (req, res) => {
  */
 // Create
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new", { user: req.user });
+  if(!req.cookies.user_id) {
+    res.redirect('/login')
+  } else {
+    res.render("urls_new", { user: users[req.cookies.user_id] });
+  }
 });
 
 // Save
 // post request
  app.post("/urls", (req, res) => {
+  if(!req.cookies.user_id) {
+    res.send('You are not allowed to shorten urls, you need to login first')
+  } else {
   const urlInfo = req.body; // Log the POST request body to the console
   console.log('Url info(post form submission received save)', urlInfo)
+  const longURL = urlInfo.longURL;
+  const userId = req.cookies.user_id;
   let shortURL = generateRandomString(6);
-  urlDatabase[shortURL] = urlInfo.longURL;
+  urlDatabase[shortURL]= {
+    longURL: longURL,
+    userID: userId,
+  };
   console.log('new urldatabase', urlDatabase);
   res.redirect(`/urls/${shortURL}`)
+  }
 });
 
 app.get("/u/:id", (req, res) => {
   // const longURL = ...
-  const longURL = urlDatabase[req.params.id]
-  res.redirect(longURL);
+  const id = req.params.id;
+  for (let key in urlDatabase) {
+     if(id === key) {
+      const longURL = urlDatabase[req.params.id].longURL
+       res.redirect(longURL); 
+     } 
+  }
+  res.send('short url id does not exist')
 });
 
 app.get("/urls/:id", (req, res) => {
-  console.log(req.params);
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id],
-  user: users[req.cookies.user_id]}
-  res.render("urls_show", templateVars);
+  if(!req.cookies.user_id) {
+    res.send('You must be login first')
+  } else {
+    const shortURL = req.params.id;
+    const url = urlDatabase[shortURL];
+
+    if (!url) {
+       return res.status(404).send("url not found")
+    } 
+      
+    const userId = req.cookies.user_id;
+
+    if (url.userID !== userId) {
+      return res.status(403).send("You are not authorized to access this url")
+    }
+    
+    const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL,
+    user: users[req.cookies.user_id]}
+    res.render("urls_show", templateVars);
+  }
 });
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
@@ -103,19 +159,40 @@ app.get("/set", (req, res) => {
 // Update
 
 app.post('/urls/:id', (req, res) => {
-  const urlInfo = req.body;
-  console.log('url info (post form submission received update)', urlInfo);
- 
-  const id = req.params.id
-  urlDatabase[id] = urlInfo.newurl;
+  if(!req.cookies.user_id) {
+    res.send('You must login first')
+  } else {
+    const shortURL = req.params.id;
+    const url = urlDatabase[shortURL];
 
-  console.log('updated urls', urlDatabase);
-  res.redirect('/urls')
+    if (!url) {
+      return res.status(404).send("url not found")
+   } 
+
+   const userId = req.cookies.user_id;
+
+   if (url.userID !== userId) {
+    return res.status(403).send("You are not authorized to access this url")
+  }
+   
+    const urlInfo = req.body;
+    console.log('url info (post form submission received update)', urlInfo);
+   
+
+    urlDatabase[shortURL].longURL = urlInfo.newurl;
+  
+    console.log('updated urls', urlDatabase);
+    res.redirect('/urls')
+  }
 });
 
 //login route get
 app.get('/login', (req, res) => {
-  res.render('login',{user: users[req.cookies.user_id] });
+  if(req.cookies.user_id) {
+    res.redirect('/urls')
+  } else {
+    res.render('login',{user: users[req.cookies.user_id] });
+  }
 })
 
 // login route
@@ -123,6 +200,10 @@ app.post('/login', (req, res) => {
   // grab the info from the body
   const email = req.body.email;
   const password = req.body.password;
+
+  if(!email || !password) {
+    return res.status(400).send('Cannot leave fields empty');
+  }
 
   let foundUserByEmail = null;
   
@@ -157,21 +238,35 @@ app.post('/logout', (req, res) => {
 
 // Display the user_id 
 app.get("/urls", (req, res) => {
-  const user_id = req.cookies.user_id
-  const user = users[user_id];;
-  const templateVars = {
-    urls: urlDatabase,
-    user: user
-    // ... any other vars
-
-  };
-  res.render("urls_index", templateVars);
+  if(!req.cookies.user_id) {
+    res.send('You must login first or create an account')
+  } else {
+    const user_id = req.cookies.user_id
+    const user = users[user_id];
+    const urls = urlsForUser(user_id);
+    const templateVars = {
+      urls: urls,
+      user: user
+      // ... any other vars
+  
+    };
+    res.render("urls_index", templateVars);
+  }
 });
 
 
 // register
 app.get('/register', (req, res) => {
-  res.render("register", {user: users[req.cookies.user_id] });
+  if(req.cookies.user_id) {
+    res.redirect('/urls')
+  } else {
+    const templateVars = {
+      user: users[req.cookies.user_id],
+      user_id: req.cookies.user_id,
+    };
+    res.render("register", templateVars);
+    // res.render("register", {user: users[req.cookies.user_id] }, { user_id: req.cookies.user_id});
+  }
 })
 
 app.post('/register', (req, res) => {
@@ -220,11 +315,24 @@ app.post('/register', (req, res) => {
 // Delete
 
   app.post('/urls/:id/delete', (req, res) => {
-    console.log(req.params.id)
-    console.log('Delete')
-     const urlKey = req.params.id;
-     delete urlDatabase[urlKey];
+    if(!req.cookies.user_id) {
+    res.send('You must login first')
+  } else {
+    const shortURL = req.params.id;
+    const url = urlDatabase[shortURL];
+
+    if (!url) {
+      return res.status(404).send("url not found")
+   } 
+
+   const userId = req.cookies.user_id;
+
+   if (url.userID !== userId) {
+    return res.status(403).send("You are not authorized to access this url")
+  }
+     delete urlDatabase[shortURL];
 
      res.redirect("/urls");
+}
   });
   
