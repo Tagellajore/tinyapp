@@ -1,6 +1,7 @@
 const express = require("express");
 const morgan = require('morgan')
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 const PORT = 8080; 
@@ -49,12 +50,12 @@ const users = {
   abc: {
     id: "abc",
     email: "t@t.com",
-    password: "123",
+    password: "$2a$10$h4xEnoBOikDmMh2AwtIsleccnG1XeF88EAH1u/smuoLLPn39WOEnK", //123
   },
   def: {
     id: "def",
     email: "y@y.com",
-    password: "456",
+    password: "$2a$10$PCbjWCrOaSp224H7hHWWBeIoSEjfwRVEF3VjmFtIUplJUL7dQBJHO", //456
   },
 };
 
@@ -205,27 +206,24 @@ app.post('/login', (req, res) => {
     return res.status(400).send('Cannot leave fields empty');
   }
 
-  let foundUserByEmail = null;
+  let foundUser = null;
   
   for(const user_id in users) {
     const user = users[user_id];
     if(user.email === email) {
-      foundUserByEmail = user;
+      foundUser = user;
     }
   }
-
-  if(foundUserByEmail) {
-     if(foundUserByEmail.password !== password) {
-      return res.status(403).send('Invalid email or password');
-     }
-  } else {
-     return res.status(403).send('You have to create an account first!');
+  
+  if(!foundUser) {
+    return res.status(403).send('You have to create an account first!');
   }
-  
-  
-  const id = foundUserByEmail.id;
-
-  res.cookie('user_id', id);
+  //  if(foundUserByEmail.password !== password) {
+  if(!bcrypt.compareSync(password, foundUser.password)) {
+     return res.status(400).send('password did not match');
+    
+  }
+  res.cookie('user_id', foundUser.id);
   res.redirect('/urls');
 });
 
@@ -288,6 +286,7 @@ app.post('/register', (req, res) => {
     }
   }
 
+
   // did we not find a user
   if (foundUser) {
      return res.status(400).send('a user with that email already exists')
@@ -297,15 +296,21 @@ app.post('/register', (req, res) => {
   // the email is unique
   // create a new user object
   const id = generateRandomString(3);
+
+  const salt = bcrypt.genSaltSync(10);
+  const hash = bcrypt.hashSync(password, salt);
   
   const newUser = {
     id: id,
     email: email,
-    password: password
+    password: hash,
+    // password: password
   };
   
   // update the users data base
   users[id] = newUser;
+
+  console.log('post reg', users);
   
   res.cookie('user_id', id);
   
