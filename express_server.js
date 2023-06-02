@@ -1,6 +1,6 @@
 const express = require("express");
 const morgan = require('morgan')
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 
 const app = express();
@@ -59,11 +59,22 @@ const users = {
   },
 };
 
+const getUserByEmail = function(email, users) {
+  // lookup magic...
+
+  return user;
+};
+
 // Middleware
 
 app.use(morgan('dev'));
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser()); // create and populate req.cookies
+// app.use(cookieParser()); // create and populate req.cookies
+app.use(cookieSession({
+  name: 'session',
+  keys: ["key"],
+}))
+
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -78,23 +89,23 @@ app.get("/", (req, res) => {
  */
 // Create
 app.get("/urls/new", (req, res) => {
-  if(!req.cookies.user_id) {
+  if(!req.session.user_id) {
     res.redirect('/login')
   } else {
-    res.render("urls_new", { user: users[req.cookies.user_id] });
+    res.render("urls_new", { user: users[req.session.user_id] });
   }
 });
 
 // Save
 // post request
  app.post("/urls", (req, res) => {
-  if(!req.cookies.user_id) {
+  if(!req.session.user_id) {
     res.send('You are not allowed to shorten urls, you need to login first')
   } else {
   const urlInfo = req.body; // Log the POST request body to the console
   console.log('Url info(post form submission received save)', urlInfo)
   const longURL = urlInfo.longURL;
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   let shortURL = generateRandomString(6);
   urlDatabase[shortURL]= {
     longURL: longURL,
@@ -118,7 +129,7 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  if(!req.cookies.user_id) {
+  if(!req.session.user_id) {
     res.send('You must be login first')
   } else {
     const shortURL = req.params.id;
@@ -128,14 +139,16 @@ app.get("/urls/:id", (req, res) => {
        return res.status(404).send("url not found")
     } 
       
-    const userId = req.cookies.user_id;
+    // const userId = req.cookies.user_id;
+    const userId = req.session.user_id;
+
 
     if (url.userID !== userId) {
       return res.status(403).send("You are not authorized to access this url")
     }
     
     const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL,
-    user: users[req.cookies.user_id]}
+    user: users[req.session.user_id]}
     res.render("urls_show", templateVars);
   }
 });
@@ -160,7 +173,7 @@ app.get("/set", (req, res) => {
 // Update
 
 app.post('/urls/:id', (req, res) => {
-  if(!req.cookies.user_id) {
+  if(!req.session.user_id) {
     res.send('You must login first')
   } else {
     const shortURL = req.params.id;
@@ -170,7 +183,7 @@ app.post('/urls/:id', (req, res) => {
       return res.status(404).send("url not found")
    } 
 
-   const userId = req.cookies.user_id;
+   const userId = req.session.user_id;
 
    if (url.userID !== userId) {
     return res.status(403).send("You are not authorized to access this url")
@@ -189,10 +202,10 @@ app.post('/urls/:id', (req, res) => {
 
 //login route get
 app.get('/login', (req, res) => {
-  if(req.cookies.user_id) {
+  if(req.session.user_id) {
     res.redirect('/urls')
   } else {
-    res.render('login',{user: users[req.cookies.user_id] });
+    res.render('login',{user: users[req.session.user_id] });
   }
 })
 
@@ -223,23 +236,27 @@ app.post('/login', (req, res) => {
      return res.status(400).send('password did not match');
     
   }
-  res.cookie('user_id', foundUser.id);
+  // res.cookie('user_id', foundUser.id);
+    req.session.user_id = foundUser.id;
   res.redirect('/urls');
 });
 
 // logout
 app.post('/logout', (req, res) => {
   // clear the user's cookies
-  res.clearCookie('user_id');
+  // res.clearCookie('user_id');
+  req.session.user_id = null;
+  // req.session = null;
   res.redirect('/login')
 })
 
 // Display the user_id 
 app.get("/urls", (req, res) => {
-  if(!req.cookies.user_id) {
+  if(!req.session.user_id) {
     res.send('You must login first or create an account')
   } else {
-    const user_id = req.cookies.user_id
+    // const user_id = req.cookies.user_id
+    const user_id = req.session.user_id;
     const user = users[user_id];
     const urls = urlsForUser(user_id);
     const templateVars = {
@@ -255,12 +272,12 @@ app.get("/urls", (req, res) => {
 
 // register
 app.get('/register', (req, res) => {
-  if(req.cookies.user_id) {
+  if(req.session.user_id) {
     res.redirect('/urls')
   } else {
     const templateVars = {
-      user: users[req.cookies.user_id],
-      user_id: req.cookies.user_id,
+      user: users[req.session.user_id],
+      user_id: req.session.user_id,
     };
     res.render("register", templateVars);
     // res.render("register", {user: users[req.cookies.user_id] }, { user_id: req.cookies.user_id});
@@ -312,7 +329,8 @@ app.post('/register', (req, res) => {
 
   console.log('post reg', users);
   
-  res.cookie('user_id', id);
+  // res.cookie('user_id', id);
+  req.session.user_id = id;
   
   res.redirect('/urls')
 });
@@ -320,7 +338,7 @@ app.post('/register', (req, res) => {
 // Delete
 
   app.post('/urls/:id/delete', (req, res) => {
-    if(!req.cookies.user_id) {
+    if(!req.session.user_id) {
     res.send('You must login first')
   } else {
     const shortURL = req.params.id;
@@ -330,7 +348,7 @@ app.post('/register', (req, res) => {
       return res.status(404).send("url not found")
    } 
 
-   const userId = req.cookies.user_id;
+   const userId = req.session.user_id;
 
    if (url.userID !== userId) {
     return res.status(403).send("You are not authorized to access this url")
