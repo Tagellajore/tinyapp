@@ -33,7 +33,7 @@ const users = {
   },
 };
 
-// Middleware
+// Middlewares
 app.use(morgan('dev'));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieSession({
@@ -41,6 +41,7 @@ app.use(cookieSession({
   keys: ["key"],
 }))
 
+// Landing page
 app.get("/", (req, res) => {
   if(req.session.user_id) {
     res.redirect("/urls");
@@ -49,6 +50,7 @@ app.get("/", (req, res) => {
   }
 });
 
+// Craete a new url
 app.get("/urls/new", (req, res) => {
   if(!req.session.user_id) {
     res.redirect('/login')
@@ -56,8 +58,8 @@ app.get("/urls/new", (req, res) => {
     res.render("urls_new", { user: users[req.session.user_id] });
   }
 });
-// Save
-// post request
+
+// Create a new short url
 app.post("/urls", (req, res) => {
   if(!req.session.user_id) {
     res.send('You are not allowed to shorten urls, you need to login first')
@@ -74,6 +76,7 @@ app.post("/urls", (req, res) => {
   }
 });
 
+// Redirect to the long url associated with a short url
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   for (let key in urlDatabase) {
@@ -84,6 +87,7 @@ app.get("/u/:id", (req, res) => {
 }
 });
 
+// Show details of specific url
 app.get("/urls/:id", (req, res) => {
   if(!req.session.user_id) {
     res.send('You must be login first')
@@ -102,24 +106,18 @@ app.get("/urls/:id", (req, res) => {
     res.render("urls_show", templateVars);
   }
 });
+
+// JSON representation of the URL database
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
-app.get("/set", (req, res) => {
-  const a = 2;
-  res.send(`a = ${a}`);
- });
- app.get("/fetch", (req, res) => {
-   res.send(`a = ${a}`);
-  });
-  app.listen(PORT, () => {
-    console.log(`Example app listening on port ${PORT}!`);
-  });
 
-// Update
+// Server started
+app.listen(PORT, () => {
+  console.log(`Tiny app listening on port ${PORT}!`);
+});
+
+// Updates a url
 app.post('/urls/:id', (req, res) => {
   if(!req.session.user_id) {
     res.send('You must login first')
@@ -139,7 +137,7 @@ app.post('/urls/:id', (req, res) => {
   }
 });
 
-//login route get
+// User login page
 app.get('/login', (req, res) => {
   if(req.session.user_id) {
     res.redirect('/urls')
@@ -148,7 +146,7 @@ app.get('/login', (req, res) => {
   }
 });
 
-// login route
+// User login
 app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -166,13 +164,13 @@ app.post('/login', (req, res) => {
   res.redirect('/urls');
 });
 
-// logout
+// User logout
 app.post('/logout', (req, res) => {
   req.session.user_id = null;
   res.redirect('/login')
 })
 
-// Display the user_id 
+// List of urls created by the logged-in user 
 app.get("/urls", (req, res) => {
   if(!req.session.user_id) {
     res.send('You must login first or create an account')
@@ -188,7 +186,7 @@ app.get("/urls", (req, res) => {
   }
 });
 
-// register
+// User registration page
 app.get('/register', (req, res) => {
   if(req.session.user_id) {
     res.redirect('/urls')
@@ -201,6 +199,7 @@ app.get('/register', (req, res) => {
   }
 });
 
+// User registration
 app.post('/register', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -224,7 +223,7 @@ app.post('/register', (req, res) => {
   res.redirect('/urls')
 });
 
-// Delete
+// Delete a url
 app.post('/urls/:id/delete', (req, res) => {
   if(!req.session.user_id) {
     res.send('You must login first')
