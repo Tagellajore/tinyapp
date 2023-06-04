@@ -166,7 +166,7 @@ app.post('/login', (req, res) => {
 
 // User logout
 app.post('/logout', (req, res) => {
-  req.session.user_id = null;
+  req.session = null;
   res.redirect('/login')
 })
 
